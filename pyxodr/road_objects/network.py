@@ -151,7 +151,7 @@ class RoadNetwork:
         self,
         include_connecting_roads: bool = True,
         verbose: bool = False,
-        link_roads: bool = True
+        link_roads: bool = True,
     ) -> List[Road]:
         """Return the Road objects for all roads in this network."""
         if not include_connecting_roads:
