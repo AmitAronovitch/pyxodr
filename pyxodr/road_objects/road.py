@@ -317,24 +317,12 @@ class Road:
             )
         return lane_offset_coordinates
 
-    @cached_property
-    def z_coordinates(self) -> np.ndarray:
+    def get_elevation_geometry(self) -> Optional[MultiGeom]:
         """
-        Generate the z coordinates of the reference line.
+        Parse the elevationProfile and build the corresponding MultiGeom function.
 
-        According to the OpenDRIVE standard (Road Elevation: 8.4.1).
-
-        Returns
-        -------
-        np.ndarray
-            Z coordinate, one per coordinate in self.reference_line
+        If there are no elevation elements, return None
         """
-        reference_line_direction_vectors = np.diff(self.reference_line, axis=0)
-        reference_line_distances = np.cumsum(
-            np.linalg.norm(reference_line_direction_vectors, axis=1)
-        )
-        reference_line_distances = np.append(np.array([0.0]), reference_line_distances)
-
         elevation_profiles = self.road_xml.findall("elevationProfile/elevation")
 
         offset_distances = []
@@ -356,10 +344,28 @@ class Road:
             offset_geometries.append(CubicPolynom(a, b, c, d))
 
         if offset_geometries != []:
-            elevation_multi_geometry = MultiGeom(
-                offset_geometries, np.array(offset_distances)
-            )
+            return MultiGeom(offset_geometries, np.array(offset_distances))
 
+    @cached_property
+    def z_coordinates(self) -> np.ndarray:
+        """
+        Generate the z coordinates of the reference line.
+
+        According to the OpenDRIVE standard (Road Elevation: 8.4.1).
+
+        Returns
+        -------
+        np.ndarray
+            Z coordinate, one per coordinate in self.reference_line
+        """
+        reference_line_direction_vectors = np.diff(self.reference_line, axis=0)
+        reference_line_distances = np.cumsum(
+            np.linalg.norm(reference_line_direction_vectors, axis=1)
+        )
+        reference_line_distances = np.append(np.array([0.0]), reference_line_distances)
+
+        elevation_multi_geometry = self.get_elevation_geometry()
+        if elevation_multi_geometry is not None:
             _, z_values = elevation_multi_geometry(reference_line_distances).T
         else:
             z_values = np.zeros_like(self.reference_line[:, 0])
