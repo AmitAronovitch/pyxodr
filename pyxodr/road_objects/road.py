@@ -93,7 +93,20 @@ class Road:
         return f"Road_{self.id}"
 
     @staticmethod
-    def sample_geometry(geometry, resolution):
+    def sample_geometry(geometry, resolution) -> tuple[float, np.ndarray]:
+        """
+        Sample the road reference line along a single part (geometry).
+
+        Returns
+        -------
+        distance_along_reference_line (float), global_coords (ndarray)
+           The initial s value and the coordinate samples.
+
+        Raises
+        ------
+        NotImplementedError
+            If the given geometry is not implemented
+        """
         # Note this is the length of the element's reference line
         length = float(geometry.attrib["length"])
         distance_along_reference_line = float(geometry.attrib["s"])
@@ -218,7 +231,9 @@ class Road:
         geometry_element_distances = []
         geometry_coordinates = []
         for geometry in self.road_xml.findall("planView/geometry"):
-            distance_along_reference_line, global_coords = self.sample_geometry(geometry, resolution)
+            distance_along_reference_line, global_coords = self.sample_geometry(
+                geometry, resolution
+            )
             geometry_element_distances.append(distance_along_reference_line)
             geometry_coordinates.append(global_coords)
 
@@ -305,6 +320,7 @@ class Road:
     def get_elevation_geometry(self) -> Optional[MultiGeom]:
         """
         Parse the elevationProfile and build the corresponding MultiGeom function.
+
         If there are no elevation elements, return None
         """
         elevation_profiles = self.road_xml.findall("elevationProfile/elevation")
